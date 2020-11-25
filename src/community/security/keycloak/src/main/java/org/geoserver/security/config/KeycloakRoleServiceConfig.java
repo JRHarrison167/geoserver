@@ -4,15 +4,15 @@
  */
 package org.geoserver.security.config;
 
-public class GeoServerKeycloakRoleServiceConfig extends BaseSecurityNamedServiceConfig
+public class KeycloakRoleServiceConfig extends KeycloakSecurityServiceConfig
         implements SecurityRoleServiceConfig {
 
     protected String adminRoleName;
     protected String groupAdminRoleName;
 
-    public GeoServerKeycloakRoleServiceConfig() {}
+    public KeycloakRoleServiceConfig() {}
 
-    public GeoServerKeycloakRoleServiceConfig(GeoServerKeycloakRoleServiceConfig other) {
+    public KeycloakRoleServiceConfig(KeycloakRoleServiceConfig other) {
         super(other);
         adminRoleName = other.getAdminRoleName();
         groupAdminRoleName = other.getGroupAdminRoleName();

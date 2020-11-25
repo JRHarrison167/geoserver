@@ -10,7 +10,7 @@ import org.geoserver.config.util.XStreamPersister;
 import org.geoserver.security.GeoServerRoleService;
 import org.geoserver.security.GeoServerSecurityManager;
 import org.geoserver.security.GeoServerSecurityProvider;
-import org.geoserver.security.config.GeoServerKeycloakRoleServiceConfig;
+import org.geoserver.security.config.KeycloakRoleServiceConfig;
 import org.geoserver.security.config.SecurityNamedServiceConfig;
 import org.geoserver.security.validation.SecurityConfigValidator;
 
@@ -20,18 +20,18 @@ public class KeycloakSecurityProvider extends GeoServerSecurityProvider {
     @Override
     public void configure(XStreamPersister xp) {
         super.configure(xp);
-        xp.getXStream().alias("keycloakRoleService", GeoServerKeycloakRoleServiceConfig.class);
+        xp.getXStream().alias("keycloakRoleService", KeycloakRoleServiceConfig.class);
     }
 
     @Override
     public Class<? extends GeoServerRoleService> getRoleServiceClass() {
-        return GeoServerKeycloakRoleService.class;
+        return KeycloakRoleService.class;
     }
 
     @Override
     public GeoServerRoleService createRoleService(SecurityNamedServiceConfig config)
             throws IOException {
-        return new GeoServerKeycloakRoleService();
+        return new KeycloakRoleService();
     }
 
     @Override
