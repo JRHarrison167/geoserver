@@ -4,25 +4,41 @@
  */
 package org.geoserver.security.impl;
 
+import com.google.gson.Gson;
+import com.google.gson.internal.LinkedTreeMap;
 import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
+import org.apache.commons.io.IOUtils;
+import org.apache.http.HttpEntity;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.ContentType;
+import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClients;
 import org.geoserver.platform.resource.Resource;
 import org.geoserver.security.GeoServerRoleService;
 import org.geoserver.security.GeoServerRoleStore;
+import org.geoserver.security.config.KeycloakSecurityServiceConfig;
 import org.geoserver.security.config.SecurityNamedServiceConfig;
 import org.geoserver.security.config.SecurityRoleServiceConfig;
 import org.geoserver.security.event.RoleLoadedEvent;
 import org.geoserver.security.event.RoleLoadedListener;
 import org.springframework.util.StringUtils;
 
-public class GeoServerKeycloakRoleService extends AbstractGeoServerSecurityService
+public class KeycloakRoleService extends AbstractGeoServerSecurityService
         implements GeoServerRoleService {
 
     protected String adminRoleName, groupAdminRoleName;
@@ -35,7 +51,7 @@ public class GeoServerKeycloakRoleService extends AbstractGeoServerSecurityServi
     protected Set<RoleLoadedListener> listeners =
             Collections.synchronizedSet(new HashSet<RoleLoadedListener>());
 
-    public GeoServerKeycloakRoleService() throws IOException {
+    public KeycloakRoleService() throws IOException {
         emptySet = Collections.unmodifiableSortedSet(new TreeSet<GeoServerRole>());
         emptyStringSet = Collections.unmodifiableSortedSet(new TreeSet<String>());
         parentMappings = new HashMap<String, String>();
@@ -47,6 +63,14 @@ public class GeoServerKeycloakRoleService extends AbstractGeoServerSecurityServi
         super.initializeFromConfig(config);
         adminRoleName = ((SecurityRoleServiceConfig) config).getAdminRoleName();
         groupAdminRoleName = ((SecurityRoleServiceConfig) config).getGroupAdminRoleName();
+
+        if (config instanceof KeycloakSecurityServiceConfig) {
+            KeycloakSecurityServiceConfig keycloakConfig = (KeycloakSecurityServiceConfig) config;
+            String serverURL = keycloakConfig.getServerURL();
+            String idOfClient = keycloakConfig.getIdOfClient();
+            String clientSecret = keycloakConfig.getClientSecret();
+        }
+
         load();
     }
 
@@ -101,7 +125,27 @@ public class GeoServerKeycloakRoleService extends AbstractGeoServerSecurityServi
      * @see org.geoserver.security.GeoserverRoleService#load()
      */
     public synchronized void load() throws IOException {
-        return;
+        LOGGER.info("Start reloading roles for service named " + getName());
+
+        try (CloseableHttpClient httpClient = HttpClients.createDefault()) {
+            Gson gson = new Gson();
+            LOGGER.info("Obtaining access token for Keycloak");
+            String accessToken = getAccessToken(httpClient, gson);
+            if (accessToken == null || accessToken.isBlank()) {
+                return;
+            }
+
+            LOGGER.info("Retrieving roles from Keycloak");
+            List<GeoServerRole> roles = getRoles(httpClient, gson, accessToken);
+            if (roles == null) {
+                return;
+            }
+            roleSet = new TreeSet<GeoServerRole>();
+            roleSet.addAll(roles);
+
+            LOGGER.info("Reloading roles successful for service named " + getName());
+            fireRoleLoadedEvent();
+        }
     }
 
     /* (non-Javadoc)
@@ -136,6 +180,7 @@ public class GeoServerKeycloakRoleService extends AbstractGeoServerSecurityServi
      * @see org.geoserver.security.GeoserverRoleService#getRoleByName(java.lang.String)
      */
     public GeoServerRole getRoleByName(String role) throws IOException {
+        if (roleMap != null) return roleMap.get(role);
         return null;
     }
 
@@ -187,5 +232,63 @@ public class GeoServerKeycloakRoleService extends AbstractGeoServerSecurityServi
     public int getRoleCount() throws IOException {
         if (roleSet != null) return roleSet.size();
         return 0;
+    }
+
+    /**
+     * Extract the message (body) from the given HTTP response.
+     *
+     * @param response the CloseableHttpResponse to retrieve the message from
+     * @return the content of the response entity, as a String
+     * @throws Exception
+     */
+    private String getStringResponseMessage(CloseableHttpResponse response) throws Exception {
+        HttpEntity responseEntity = response.getEntity();
+        if (responseEntity == null) {
+            throw new NullPointerException("HTTP response from Keycloak contained no message");
+        }
+
+        try (InputStream contentStream = responseEntity.getContent()) {
+            return IOUtils.toString(contentStream, StandardCharsets.UTF_8);
+        }
+    }
+
+    private String getAccessToken(CloseableHttpClient httpClient, Gson gson) {
+        HttpPost httpPost =
+                new HttpPost(
+                        "http://keycloak:8080/auth/realms/master/protocol/openid-connect/token");
+        String body =
+                "client_id=geoserver-client&client_secret=83ca7266-83b8-4951-bb31-6b4736866c50&grant_type=client_credentials";
+        HttpEntity entity = new StringEntity(body, ContentType.APPLICATION_FORM_URLENCODED);
+        httpPost.setEntity(entity);
+
+        try (CloseableHttpResponse response = httpClient.execute(httpPost)) {
+            String jsonString = getStringResponseMessage(response);
+            Map<?, ?> map = gson.fromJson(jsonString, Map.class);
+            return map.get("access_token").toString();
+        } catch (Exception exception) {
+            System.out.println(exception.getMessage());
+            return null;
+        }
+    }
+
+    private List<GeoServerRole> getRoles(
+            CloseableHttpClient httpClient, Gson gson, String accessToken) {
+        HttpGet httpGet =
+                new HttpGet(
+                        "http://keycloak:8080/auth/admin/realms/master/clients/e3a84e25-e33f-42ea-82eb-88c01d21f23a/roles");
+        httpGet.setHeader("Authorization", "Bearer " + accessToken);
+        try (CloseableHttpResponse response = httpClient.execute(httpGet)) {
+            String jsonString = getStringResponseMessage(response);
+            List<GeoServerRole> roles = new ArrayList<>();
+            for (Object obj : gson.fromJson(jsonString, List.class)) {
+                LinkedTreeMap<?, ?> role = (LinkedTreeMap<?, ?>) obj;
+                roles.add(createRoleObject(role.get("name").toString()));
+            }
+            return roles;
+        } catch (Exception exception) {
+            System.out.println(exception.getMessage());
+        }
+
+        return null;
     }
 }

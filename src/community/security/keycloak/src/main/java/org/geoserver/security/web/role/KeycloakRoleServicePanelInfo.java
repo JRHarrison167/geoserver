@@ -5,17 +5,17 @@
  */
 package org.geoserver.security.web.role;
 
-import org.geoserver.security.config.GeoServerKeycloakRoleServiceConfig;
-import org.geoserver.security.impl.GeoServerKeycloakRoleService;
+import org.geoserver.security.config.KeycloakRoleServiceConfig;
+import org.geoserver.security.impl.KeycloakRoleService;
 
-/** Configuration panel extension for {@link GeoServerKeycloakRoleService}. */
+/** Configuration panel extension for {@link KeycloakRoleService}. */
 public class KeycloakRoleServicePanelInfo
-        extends RoleServicePanelInfo<GeoServerKeycloakRoleServiceConfig, KeycloakRoleServicePanel> {
+        extends RoleServicePanelInfo<KeycloakRoleServiceConfig, KeycloakRoleServicePanel> {
 
     public KeycloakRoleServicePanelInfo() {
         setComponentClass(KeycloakRoleServicePanel.class);
-        setServiceClass(GeoServerKeycloakRoleService.class);
-        setServiceConfigClass(GeoServerKeycloakRoleServiceConfig.class);
+        setServiceClass(KeycloakRoleService.class);
+        setServiceConfigClass(KeycloakRoleServiceConfig.class);
         setPriority(0);
     }
 }

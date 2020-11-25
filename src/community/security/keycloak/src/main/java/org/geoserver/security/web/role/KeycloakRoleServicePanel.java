@@ -5,13 +5,18 @@
  */
 package org.geoserver.security.web.role;
 
+import org.apache.wicket.markup.html.form.TextField;
 import org.apache.wicket.model.IModel;
-import org.geoserver.security.config.GeoServerKeycloakRoleServiceConfig;
+import org.geoserver.security.config.KeycloakRoleServiceConfig;
 
-/** Configuration panel for {@link GeoServerKeycloakRoleService}. */
-public class KeycloakRoleServicePanel extends RoleServicePanel<GeoServerKeycloakRoleServiceConfig> {
+/** Configuration panel for {@link KeycloakRoleService}. */
+public class KeycloakRoleServicePanel extends RoleServicePanel<KeycloakRoleServiceConfig> {
 
-    public KeycloakRoleServicePanel(String id, IModel<GeoServerKeycloakRoleServiceConfig> model) {
+    public KeycloakRoleServicePanel(String id, IModel<KeycloakRoleServiceConfig> model) {
         super(id, model);
+
+        add(new TextField<String>("serverURL").setRequired(true));
+        add(new TextField<String>("idOfClient").setRequired(true));
+        add(new TextField<String>("clientSecret").setRequired(true));
     }
 }
