@@ -21,6 +21,7 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpEntity;
+import org.apache.http.StatusLine;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
@@ -47,9 +48,14 @@ public class KeycloakRoleService extends AbstractGeoServerSecurityService
     protected Map<String, String> parentMappings;
     protected HashMap<String, GeoServerRole> roleMap;
     protected SortedSet<GeoServerRole> roleSet;
-
     protected Set<RoleLoadedListener> listeners =
             Collections.synchronizedSet(new HashSet<RoleLoadedListener>());
+
+    private String serverURL;
+    private String realm;
+    private String clientID;
+    private String idOfClient;
+    private String clientSecret;
 
     public KeycloakRoleService() throws IOException {
         emptySet = Collections.unmodifiableSortedSet(new TreeSet<GeoServerRole>());
@@ -66,9 +72,11 @@ public class KeycloakRoleService extends AbstractGeoServerSecurityService
 
         if (config instanceof KeycloakSecurityServiceConfig) {
             KeycloakSecurityServiceConfig keycloakConfig = (KeycloakSecurityServiceConfig) config;
-            String serverURL = keycloakConfig.getServerURL();
-            String idOfClient = keycloakConfig.getIdOfClient();
-            String clientSecret = keycloakConfig.getClientSecret();
+            serverURL = keycloakConfig.getServerURL();
+            realm = keycloakConfig.getRealm();
+            clientID = keycloakConfig.getClientID();
+            idOfClient = keycloakConfig.getIdOfClient();
+            clientSecret = keycloakConfig.getClientSecret();
         }
 
         load();
@@ -252,32 +260,69 @@ public class KeycloakRoleService extends AbstractGeoServerSecurityService
         }
     }
 
+    /**
+     * Obtain an access token from Keycloak, using the server URL, realm name, and client secret
+     * from the config. Returns null if an error occurs.
+     *
+     * @param httpClient a CloseableHttpClient to send the request through
+     * @return a String access token on success, null on error.
+     */
     private String getAccessToken(CloseableHttpClient httpClient, Gson gson) {
         HttpPost httpPost =
                 new HttpPost(
-                        "http://keycloak:8080/auth/realms/master/protocol/openid-connect/token");
+                        this.serverURL
+                                + "/auth/realms/"
+                                + this.realm
+                                + "/protocol/openid-connect/token");
         String body =
-                "client_id=geoserver-client&client_secret=83ca7266-83b8-4951-bb31-6b4736866c50&grant_type=client_credentials";
+                "client_id="
+                        + this.clientID
+                        + "&client_secret="
+                        + this.clientSecret
+                        + "&grant_type=client_credentials";
         HttpEntity entity = new StringEntity(body, ContentType.APPLICATION_FORM_URLENCODED);
         httpPost.setEntity(entity);
 
         try (CloseableHttpResponse response = httpClient.execute(httpPost)) {
+            StatusLine statusLine = response.getStatusLine();
+            if (statusLine != null && statusLine.getStatusCode() != 200) {
+                LOGGER.info("Issue retrieving access token: " + statusLine);
+                return null;
+            }
             String jsonString = getStringResponseMessage(response);
             Map<?, ?> map = gson.fromJson(jsonString, Map.class);
             return map.get("access_token").toString();
         } catch (Exception exception) {
-            System.out.println(exception.getMessage());
+            LOGGER.info(exception.getMessage());
             return null;
         }
     }
 
+    /**
+     * Retrieve a List of GeoServerRole objects from Keyclaok, using the server URL, realm name, and
+     * ID of client from the config. Returns null if an error occurs.
+     *
+     * @param httpClient a CloseableHttpClient to send the request through
+     * @param accessToken an access token for the geoserver-client user
+     * @return a List of GeoServerRole objects from Keycloak on success, null on error.
+     */
     private List<GeoServerRole> getRoles(
             CloseableHttpClient httpClient, Gson gson, String accessToken) {
         HttpGet httpGet =
                 new HttpGet(
-                        "http://keycloak:8080/auth/admin/realms/master/clients/e3a84e25-e33f-42ea-82eb-88c01d21f23a/roles");
+                        this.serverURL
+                                + "/auth/admin/realms/"
+                                + this.realm
+                                + "/clients/"
+                                + this.idOfClient
+                                + "/roles");
         httpGet.setHeader("Authorization", "Bearer " + accessToken);
         try (CloseableHttpResponse response = httpClient.execute(httpGet)) {
+            StatusLine statusLine = response.getStatusLine();
+            if (statusLine != null && statusLine.getStatusCode() != 200) {
+                LOGGER.info("Issue retrieving roles: " + statusLine);
+                return null;
+            }
             String jsonString = getStringResponseMessage(response);
             List<GeoServerRole> roles = new ArrayList<>();
             for (Object obj : gson.fromJson(jsonString, List.class)) {
@@ -286,7 +331,7 @@ public class KeycloakRoleService extends AbstractGeoServerSecurityService
             }
             return roles;
         } catch (Exception exception) {
-            System.out.println(exception.getMessage());
+            LOGGER.info(exception.getMessage());
         }
 
         return null;

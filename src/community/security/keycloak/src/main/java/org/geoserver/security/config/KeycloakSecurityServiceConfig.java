@@ -7,6 +7,8 @@ package org.geoserver.security.config;
 public class KeycloakSecurityServiceConfig extends BaseSecurityNamedServiceConfig {
 
     private String serverURL;
+    private String realm;
+    private String clientID;
     private String idOfClient;
     private String clientSecret;
 
@@ -15,6 +17,8 @@ public class KeycloakSecurityServiceConfig extends BaseSecurityNamedServiceConfi
     public KeycloakSecurityServiceConfig(KeycloakSecurityServiceConfig other) {
         super(other);
         serverURL = other.getServerURL();
+        serverURL = other.getRealm();
+        clientID = other.getClientID();
         idOfClient = other.getIdOfClient();
         clientSecret = other.getClientSecret();
     }
@@ -24,7 +28,32 @@ public class KeycloakSecurityServiceConfig extends BaseSecurityNamedServiceConfi
     }
 
     public void setServerURL(String serverURL) {
-        this.serverURL = serverURL;
+        String url = serverURL;
+        // If the given URL does not start with http or https, add http
+        if (!url.matches("^(http|https)://.*$")) {
+            url = "http://" + url;
+        }
+        // Remove trailing / if given
+        if (url.endsWith("/")) {
+            url = url.substring(0, url.length() - 1);
+        }
+        this.serverURL = url;
+    }
+
+    public String getRealm() {
+        return realm;
+    }
+
+    public void setRealm(String realm) {
+        this.realm = realm;
+    }
+
+    public String getClientID() {
+        return clientID;
+    }
+
+    public void setClientID(String clientID) {
+        this.clientID = clientID;
     }
 
     public String getIdOfClient() {

@@ -8,12 +8,20 @@
         <li>
             <fieldset>
                 <legend>
-                    <span><wicket:message key="settings"></wicket:message></span>
+                    <span><wicket:message key="keycloakSettings"></wicket:message></span>
                 </legend>
                 <ul>
                     <li>
                         <label for="serverURL"><wicket:message key="serverURL"></wicket:message></label>
                         <input wicket:id="serverURL" type="text" class="field text"></input>
+                    </li>
+                    <li>
+                        <label for="realm"><wicket:message key="realm"></wicket:message></label>
+                        <input wicket:id="realm" type="text" class="field text"></input>
+                    </li>
+                    <li>
+                        <label for="clientID"><wicket:message key="clientID"></wicket:message></label>
+                        <input wicket:id="clientID" type="text" class="field text"></input>
                     </li>
                     <li>
                         <label for="idOfClient"><wicket:message key="idOfClient"></wicket:message></label>
