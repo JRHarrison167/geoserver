@@ -267,7 +267,7 @@ public class KeycloakRoleService extends AbstractGeoServerSecurityService
      * @param httpClient a CloseableHttpClient to send the request through
      * @return a String access token on success, null on error.
      */
-    private String getAccessToken(CloseableHttpClient httpClient, Gson gson) {
+    public String getAccessToken(CloseableHttpClient httpClient, Gson gson) {
         HttpPost httpPost =
                 new HttpPost(
                         this.serverURL
@@ -285,7 +285,7 @@ public class KeycloakRoleService extends AbstractGeoServerSecurityService
 
         try (CloseableHttpResponse response = httpClient.execute(httpPost)) {
             StatusLine statusLine = response.getStatusLine();
-            if (statusLine != null && statusLine.getStatusCode() != 200) {
+            if (statusLine == null || statusLine.getStatusCode() != 200) {
                 LOGGER.info("Issue retrieving access token: " + statusLine);
                 return null;
             }
@@ -306,7 +306,7 @@ public class KeycloakRoleService extends AbstractGeoServerSecurityService
      * @param accessToken an access token for the geoserver-client user
      * @return a List of GeoServerRole objects from Keycloak on success, null on error.
      */
-    private List<GeoServerRole> getRoles(
+    public List<GeoServerRole> getRoles(
             CloseableHttpClient httpClient, Gson gson, String accessToken) {
         HttpGet httpGet =
                 new HttpGet(
@@ -319,7 +319,7 @@ public class KeycloakRoleService extends AbstractGeoServerSecurityService
         httpGet.setHeader("Authorization", "Bearer " + accessToken);
         try (CloseableHttpResponse response = httpClient.execute(httpGet)) {
             StatusLine statusLine = response.getStatusLine();
-            if (statusLine != null && statusLine.getStatusCode() != 200) {
+            if (statusLine == null || statusLine.getStatusCode() != 200) {
                 LOGGER.info("Issue retrieving roles: " + statusLine);
                 return null;
             }
