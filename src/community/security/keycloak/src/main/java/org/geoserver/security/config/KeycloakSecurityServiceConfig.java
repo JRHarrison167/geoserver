@@ -17,7 +17,7 @@ public class KeycloakSecurityServiceConfig extends BaseSecurityNamedServiceConfi
     public KeycloakSecurityServiceConfig(KeycloakSecurityServiceConfig other) {
         super(other);
         serverURL = other.getServerURL();
-        serverURL = other.getRealm();
+        realm = other.getRealm();
         clientID = other.getClientID();
         idOfClient = other.getIdOfClient();
         clientSecret = other.getClientSecret();
