@@ -1,9 +1,12 @@
-/* (c) 2018 Open Source Geospatial Foundation - all rights reserved
+/* (c) 2020 Open Source Geospatial Foundation - all rights reserved
  * This code is licensed under the GPL 2.0 license, available at the root
  * application directory.
  */
-package org.geoserver.security.config;
+package org.geoserver.security.keycloak;
 
+import org.geoserver.security.config.SecurityRoleServiceConfig;
+
+/** Configuration class for the {@link org.geoserver.security.keycloak.KeycloakRoleService}. */
 public class KeycloakRoleServiceConfig extends KeycloakSecurityServiceConfig
         implements SecurityRoleServiceConfig {
 

@@ -1,4 +1,4 @@
-/* (c) 2014 Open Source Geospatial Foundation - all rights reserved
+/* (c) 2020 Open Source Geospatial Foundation - all rights reserved
  * (c) 2001 - 2013 OpenPlans
  * This code is licensed under the GPL 2.0 license, available at the root
  * application directory.
@@ -23,10 +23,13 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.geoserver.security.impl.GeoServerRole;
-import org.geoserver.security.impl.KeycloakRoleService;
 import org.junit.Before;
 import org.junit.Test;
 
+/**
+ * Tests for {@link org.geoserver.security.keycloak.KeycloakRoleService}. Does not test the load
+ * method.
+ */
 public class KeycloakRoleServiceTest extends TestCase {
 
     private static final String accessToken = "generatedAccessToken";
@@ -167,7 +170,6 @@ public class KeycloakRoleServiceTest extends TestCase {
         CloseableHttpClient httpClient = mock(CloseableHttpClient.class);
         when(httpClient.execute(any(HttpGet.class))).thenReturn(response);
         List<GeoServerRole> roles = service.getRoles(httpClient, gson, accessToken);
-        assertNotNull(roles);
         assertTrue(CollectionUtils.isEqualCollection(expectedRoles, roles));
     }
 }

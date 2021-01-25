@@ -1,8 +1,8 @@
-/* (c) 2016 Open Source Geospatial Foundation - all rights reserved
+/* (c) 2020 Open Source Geospatial Foundation - all rights reserved
  * This code is licensed under the GPL 2.0 license, available at the root
  * application directory.
  */
-package org.geoserver.security.impl;
+package org.geoserver.security.keycloak;
 
 import com.google.gson.Gson;
 import com.google.gson.internal.LinkedTreeMap;
@@ -32,13 +32,15 @@ import org.apache.http.impl.client.HttpClients;
 import org.geoserver.platform.resource.Resource;
 import org.geoserver.security.GeoServerRoleService;
 import org.geoserver.security.GeoServerRoleStore;
-import org.geoserver.security.config.KeycloakSecurityServiceConfig;
 import org.geoserver.security.config.SecurityNamedServiceConfig;
 import org.geoserver.security.config.SecurityRoleServiceConfig;
 import org.geoserver.security.event.RoleLoadedEvent;
 import org.geoserver.security.event.RoleLoadedListener;
+import org.geoserver.security.impl.AbstractGeoServerSecurityService;
+import org.geoserver.security.impl.GeoServerRole;
 import org.springframework.util.StringUtils;
 
+/** Keycloak implementation of {@link org.geoserver.security.GeoServerRoleService} */
 public class KeycloakRoleService extends AbstractGeoServerSecurityService
         implements GeoServerRoleService {
 
