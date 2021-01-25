@@ -9,5 +9,5 @@
           http://www.springframework.org/schema/security
           http://www.springframework.org/schema/security/spring-security-3.0.4.xsd">
 
-    <bean id="keycloakSecurityProvider" class="org.geoserver.security.impl.KeycloakSecurityProvider"/>
+    <bean id="keycloakSecurityProvider" class="org.geoserver.security.keycloak.KeycloakSecurityProvider"/>
 </beans>

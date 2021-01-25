@@ -32,7 +32,7 @@
 	</bean>
 
 	<!-- Keycloak role service panel infos -->
-	<bean id="keycloakRoleServicePanelInfo" class="org.geoserver.security.web.role.KeycloakRoleServicePanelInfo">
+	<bean id="keycloakRoleServicePanelInfo" class="org.geoserver.web.security.keycloak.KeycloakRoleServicePanelInfo">
 		<property name="id" value="security.keycloakRoleService" />
 		<property name="shortTitleKey" value="KeycloakRoleServicePanel.short"/>
 		<property name="titleKey" value="KeycloakRoleServicePanel.title"/>
