@@ -141,7 +141,7 @@ public class KeycloakRoleService extends AbstractGeoServerSecurityService
             Gson gson = new Gson();
             LOGGER.info("Obtaining access token for Keycloak");
             String accessToken = getAccessToken(httpClient, gson);
-            if (accessToken == null || accessToken.isBlank()) {
+            if (accessToken == null || accessToken.trim().isEmpty()) {
                 return;
             }
 
